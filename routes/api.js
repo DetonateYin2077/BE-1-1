@@ -4,32 +4,32 @@ const expect = require('chai').expect;
 const ConvertHandler = require('../controllers/convertHandler.js');
 
 module.exports = function (app) {
-  
+
   let convertHandler = new ConvertHandler();
 
-  app.get('/api/convert', (req, res) => {
-    let initNum = convertHandler.getNum(req.query.input)
-    let initUnit = convertHandler.getUnit(req.query.input)
-    let returnNum = convertHandler.convert(initNum, initUnit)
-    let returnUnit = convertHandler.getReturnUnit(initUnit)
+  app.route('/api/convert')
+      .get(function(req, res){
+        let input = req.query.input;
+        //console.log(input)
+        let initNum = convertHandler.getNum(input);
+        console.log("api initNum", initNum)
+        let initUnit = convertHandler.getUnit(input);
+        console.log("api initUnit", initUnit)
+        let returnNum = convertHandler.convert(initNum, initUnit);
+        let returnUnit = convertHandler.getReturnUnit(initUnit);
+        let toString = convertHandler.getString(initNum, initUnit, returnNum, returnUnit)
 
-    if (initUnit === 'invalid unit' && initNum === 'invalid number') {
-      res.type('txt').send('invalid number and unit')
-    } else if (initUnit === 'invalid unit') {
-      res.type('txt').send('invalid unit')
-    } else if (initNum === 'invalid number') {
-      res.type('txt').send('invalid number')
-    }
 
-    res.json({
-      initNum: initNum,
-      initUnit: initUnit,
-      returnNum: returnNum,
-      returnUnit: returnUnit,
-      string: `${initNum} ${convertHandler.spellOutUnit(initUnit)}` +
-        ' converts to ' +
-        `${returnNum} ${convertHandler.spellOutUnit(returnUnit)}`
-    })
-  })
+        if(initNum=="invalid number" && initUnit=="invalid unit"){
+          res.send("invalid number and unit")
+        } else if(initNum=="invalid number"){
+          res.send("invalid number")
+        } else if(initUnit=="invalid unit"){
+          res.send("invalid unit")
+        }
+
+        res.json({initNum, initUnit, returnNum, returnUnit, string: toString});
+
+      })
 
 };

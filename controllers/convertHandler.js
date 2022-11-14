@@ -1,100 +1,104 @@
+const mathjs = require('mathjs');
 function ConvertHandler() {
-  let regSplit = /[a-z]+|[^a-z]+/gi
-  let regDig = /\d/
-
+  
   this.getNum = function(input) {
+    let result = "";
+    let extraSlash = false;
+    for(let i=0;i<input.length;i++){
+      if(input[i]!='.' && input[i]!='/' && (input[i] < '0' || input[i]>'9') ){
+        break;
+      }
 
-    let result = input.match(regSplit)[0];
-    //if no numeric is provided the initNum=1
-    if (!regDig.test(result)){
-        return Number(1);
-    }
-    // if there is a fraction
-    if(result.includes('/')){
-      let nums = result.split('/')
-      // if more than 2 is invalid fraction
-      if(nums.length > 2){
-        //return undefined;
+      if(extraSlash == false && input[i] == '/'){
+        extraSlash = true;
+      }
+      else if(extraSlash && input[i] == '/'){
+        //console.error("Double-fraction Error");
         return "invalid number";
       }
-      //return the calculate fraction
-      return Number(parseFloat(nums[0]/nums[1]).toFixed(5))
+
+      if(input[i] != " ")
+      {
+        result += input[i];
+      }
     }
 
-    // if the number is invalid
-    if(isNaN(result)){
-      //return undefined;
-      return "invalid number"
+    if(extraSlash){
+      val = result.split('/');
+      //console.log(val);
+      return val[0]/val[1];
     }
-    // return int or decimal number
+    else if(result == ""){
+      result = "1";
+    }
     return result;
   };
-
+  
   this.getUnit = function(input) {
-    let result
-    // if there is no digit, the first array is "unit"
-    if (!regDig.test(input)){
-      result = input.match(regSplit)[0].toLowerCase();
-    } else{
-      result = input.match(regSplit)[1].toLowerCase();
+    let unitsAvailable = ['gal','l','L','lbs','kg','km','mi'];
+    let result = "";
+    let startUnit = false;
+     for(let i=0;i<input.length;i++){
+      if(input[i] < 'A' || input[i]>'z'){
+        if(startUnit)
+        {
+          break;
+        }
+      }
+      else{
+         startUnit = true;
+      }
+
+      if(startUnit){
+        result += input[i];
+      }
+    }
+    
+    if(result == "l" || result == "L"){
+      result = "L";
+    }
+    else{
+      result = result.toLowerCase();
     }
 
-    let units = ['gal','l','km','mi','kg','lbs'];
-
-    // Check validity of the unit
-    if (!units.includes(result)){
+    if( unitsAvailable.indexOf(result) == -1 ){
       return "invalid unit";
     }
-    // liter must return in uppercase
-    if(result == 'l'){
-      result = 'L'
-    }
-
-    console.log("getUnit", result)
     return result;
   };
-
+  
   this.getReturnUnit = function(initUnit) {
-    let result = initUnit.toLowerCase();
-    
-    switch(result){
-      case "km":
-        return "mi";
+    let result;
+    switch(initUnit.toLowerCase()){
       case "gal":
-        return "L"
-      case "lbs":
-        return "kg"
-      case "mi":
-        return "km"
+        result = "L";
+        break;
       case "l":
-        return "gal"
+        result = "gal";
+        break;
+      case "km":
+        result = "mi";
+        break;
+      case "mi":
+        result = "km";
+        break;
+      case "lbs":
+        result = "kg";
+        break;
       case "kg":
-        return "lbs"
-      default:
-        return "invalid unit";
+        result = "lbs";
+        break;
     }
-
+    return result;
   };
 
   this.spellOutUnit = function(unit) {
-    let result = unit.toLowerCase();
-    switch(result){
-      case "km":
-        return "kilometers";
-      case "gal":
-        return "gallons"
-      case "lbs":
-        return "pounds"
-      case "mi":
-        return "miles"
-      case "l":
-        return "liters"
-      case "kg":
-        return "kilograms"
-      default:
-        return undefined;
-    }
-
+    
+    let unitNames = { "km" : "kilometers", "mi" : "miles",
+                    "gal": "gallons", "l":"litres",
+                    "kg":"kilograms", "lbs":"pounds"};
+    let result = unitNames[unit.toLowerCase()];
+    return result;
   };
   
   this.convert = function(initNum, initUnit) {
@@ -102,38 +106,37 @@ function ConvertHandler() {
     const lbsToKg = 0.453592;
     const miToKm = 1.60934;
     let result;
-    
-    let unit = initUnit.toLowerCase()
-    switch(unit){
-      case "km":
-        result =  initNum/miToKm;
-        break;
+    switch(initUnit.toLowerCase()){
       case "gal":
-        result = initNum*galToL;
-        break;
-      case "lbs":
-        result = initNum*lbsToKg;
-        break;
-      case "mi":
-        result = initNum*miToKm;
+        result = initNum * galToL;
         break;
       case "l":
-        result = initNum/galToL;
+        result = initNum / galToL;
+        break;
+      case "km":
+        result = initNum / miToKm;
+        break;
+      case "mi":
+        result = initNum * miToKm;
+        break;
+      case "lbs":
+        result = initNum * lbsToKg;
         break;
       case "kg":
-        result = initNum/lbsToKg;
+        result = initNum / lbsToKg;
         break;
-      default:
-        result = undefined;
     }
-
-    console.log("convert", result)
-    return Number(parseFloat(result).toFixed(5));
+    return Math.round(result*100000)/100000;
   };
   
   this.getString = function(initNum, initUnit, returnNum, returnUnit) {
-    let result = `${initNum} ${this.spellOutUnit(initUnit)} converts to ${returnNum} ${this.spellOutUnit(returnUnit)}`;
-    
+    let result = {
+                  "initNum":Number(initNum),
+                  "initUnit": initUnit,
+                  "returnNum":returnNum,
+                  "returnUnit":returnUnit,
+                  "string":initNum +" "+this.spellOutUnit(initUnit)+" converts to "+returnNum+" "+this.spellOutUnit(returnUnit)
+                 };
     return result;
   };
   

@@ -1,39 +1,59 @@
 'use strict';
 
-const expect = require('chai').expect;
 const ConvertHandler = require('../controllers/convertHandler.js');
 
 module.exports = function (app) {
-  
   let convertHandler = new ConvertHandler();
 
-  app.route('/api/convert').get((req,res)=>{
-    let input = req.query.input;
-    let initNum = convertHandler.getNum(input);
-    console.log(initNum);
-    let initUnit = convertHandler.getUnit(input);
-    console.log(initUnit);
+  // API route - GET request to /api/convert with input query param
+  app.get('/api/convert', (req, res) => {
+    const { input } = req.query;
 
-    if(initNum == "invalid number" && initUnit!="invalid unit"){
-       res.send("invalid number");
+    // If no input, there are no units (number would default to 1)
+    if (!input) {
+      return res.json('invalid unit');
     }
-    else if(initNum != "invalid number" && initUnit=="invalid unit"){
-       res.send("invalid unit");
+
+    // Otherwise try to convert:
+    let errMessage, initNum, initUnit;
+    try {
+      initNum = convertHandler.getNum(input);
+    } catch (err) {
+      // Number is not valid, store message
+      errMessage = err.message;
     }
-    else if(initNum == "invalid number" && initUnit=="invalid unit"){
-       res.send("invalid number and unit");
+
+    try {
+      initUnit = convertHandler.getUnit(input);
+    } catch (err) {
+      // Unit is not valid - either both number and unit or just unit are invalid
+      if (errMessage) {
+        errMessage = 'invalid number and unit';
+      } else {
+        errMessage = err.message;
+      }
     }
-    else{
-      let returnNum = convertHandler.convert(initNum,initUnit);
-      console.log(returnNum);
-      let returnUnit = convertHandler.getReturnUnit(initUnit);
-      console.log(returnUnit);
-      let stringOp=convertHandler.getString(initNum,initUnit,returnNum,returnUnit)
-      res.json(stringOp);
+
+    if (errMessage) {
+      return res.json(errMessage);
     }
-    
-    
+
+    // Otherwise number and unit are valid, return conversion
+    const returnNum = convertHandler.convert(initNum, initUnit);
+    const returnUnit = convertHandler.getReturnUnit(initUnit);
+    const string = convertHandler.getString(
+      initNum,
+      initUnit,
+      returnNum,
+      returnUnit,
+    );
+
+    return res.json({
+      initNum,
+      initUnit,
+      returnNum,
+      returnUnit,
+      string,
+    });
   });
-  
-  
 };

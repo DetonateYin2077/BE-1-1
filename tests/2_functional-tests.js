@@ -2,85 +2,75 @@ const chaiHttp = require('chai-http');
 const chai = require('chai');
 let assert = chai.assert;
 const server = require('../server');
-const { suite } = require('mocha');
-const {
-  ERROR_INVALID_NUMBER,
-  ERROR_INVALID_UNIT,
-} = require('../controllers/convertHandler');
 
 chai.use(chaiHttp);
 
-suite('Functional Tests', function () {
-  suite('GET /api/convert', function () {
-    const validInput = '5.3kg';
-    test(`Convert valid input: ${validInput}`, (done) => {
-      chai
-        .request(server)
-        .get('/api/convert')
-        .query({ input: validInput })
-        .end((_err, res) => {
-          assert.equal(res.status, 200);
-          assert.equal(res.body.initNum, 5.3);
-          assert.equal(res.body.initUnit, 'kg');
-          assert.approximately(res.body.returnNum, 11.68451, 0.1);
-          assert.equal(res.body.returnUnit, 'lbs');
-          done();
-        });
-    });
+suite('Functional Tests', function() {
 
-    const invalidInput = '34.13xlbs';
-    test(`Convert invalid input: ${invalidInput}`, function (done) {
-      chai
-        .request(server)
-        .get('/api/convert')
-        .query({ input: invalidInput })
-        .end((_err, res) => {
-          assert.equal(res.status, 200);
-          assert.equal(res.body, ERROR_INVALID_UNIT);
-          done();
-        });
-    });
+  test('Convert 10L (valid input)', function(done) {
+    chai
+      .request(server)
+      .get('/api/convert')
+      .query({ input: '10L' })
+      .end((err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.initNum, 10);
+        assert.equal(res.body.initUnit, 'L');
+        assert.approximately(res.body.returnNum, 2.64172, 0.1);
+        assert.equal(res.body.returnUnit, 'gal');
+        done();
+      });
+  });
 
-    const invalidNumber = '34/1/3lbs';
-    test(`Convert invalid number: ${invalidNumber}`, (done) => {
-      chai
-        .request(server)
-        .get('/api/convert')
-        .query({ input: invalidNumber })
-        .end((_err, res) => {
-          assert.equal(res.status, 200);
-          assert.equal(res.body, ERROR_INVALID_NUMBER);
-          done();
-        });
-    });
+  test('Convert 32g (invalid input)', function(done) {
+    chai
+      .request(server)
+      .get('/api/convert')
+      .query({ input: '32g' })
+      .end((err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.initUnit, undefined);
+        done();
+      });
+  });
 
-    const invalidNumberAndUnit = '34/1/3xlbs';
-    test(`Convert invalid number and unit: ${invalidNumberAndUnit}`, (done) => {
-      chai
-        .request(server)
-        .get('/api/convert')
-        .query({ input: invalidNumberAndUnit })
-        .end((_err, res) => {
-          assert.equal(res.status, 200);
-          assert.equal(res.body, ERROR_INVALID_NUMBER + ' and unit');
-          done();
-        });
-    });
+  test('Convert 3/7.2/4kg (invalid input)', function(done) {
+    chai
+      .request(server)
+      .get('/api/convert')
+      .query({ input: '3/7.2/4kg' })
+      .end((err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.initNum, undefined);
+        done();
+      });
+  });
 
-    const inputWithoutNumber = 'lbs';
-    test(`Convert with no number: ${inputWithoutNumber}`, (done) => {
-      chai
-        .request(server)
-        .get('/api/convert')
-        .query({ input: inputWithoutNumber })
-        .end((_err, res) => {
-          assert.equal(res.status, 200);
-          assert.equal(
-            res.body.string,
-            '1 pounds converts to 0.45359 kilograms'
-          );
-          done();
-        });
-    });
+  test('Convert 3/7.2/4g (invalid number and unit)', function(done) {
+    chai
+      .request(server)
+      .get('/api/convert')
+      .query({ input: '3/7.2/4g' })
+      .end((err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.initNum, undefined);
+        assert.equal(res.body.initUnit, undefined);
+        done();
+      });
+  });
+
+  test('Convert kg (no number input)', function(done) {
+    chai
+      .request(server)
+      .get('/api/convert')
+      .query({ input: 'kg' })
+      .end((err, res) => {
+        assert.equal(res.status, 200);
+        assert.equal(res.body.initNum, 1);
+        assert.equal(res.body.initUnit, 'kg')
+        assert.approximately(res.body.returnNum, 2.20462, 0.1);
+        assert.equal(res.body.returnUnit, 'lbs');
+        done();
+      });
   });
 });

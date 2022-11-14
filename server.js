@@ -28,9 +28,9 @@ app.route('/')
 //For FCC testing purposes
 fccTestingRoutes(app);
 
-//Routing for API 
-apiRoutes(app);  
-    
+//Routing for API
+apiRoutes(app);
+
 //404 Not Found Middleware
 app.use(function(req, res, next) {
   res.status(404)
@@ -49,8 +49,9 @@ app.listen(port, function () {
       try {
         runner.run();
       } catch(e) {
+        let error = e;
           console.log('Tests are not valid:');
-          console.error(e);
+          console.log(error);
       }
     }, 1500);
   }

@@ -7,33 +7,29 @@ module.exports = function (app) {
   
   let convertHandler = new ConvertHandler();
 
-  app.route('/api/convert').get((req,res)=>{
-    let input = req.query.input;
-    let initNum = convertHandler.getNum(input);
-    console.log(initNum);
-    let initUnit = convertHandler.getUnit(input);
-    console.log(initUnit);
+  app.get('/api/convert', (req, res) => {
+    let initNum = convertHandler.getNum(req.query.input)
+    let initUnit = convertHandler.getUnit(req.query.input)
+    let returnNum = convertHandler.convert(initNum, initUnit)
+    let returnUnit = convertHandler.getReturnUnit(initUnit)
 
-    if(initNum == "invalid number" && initUnit!="invalid unit"){
-       res.send("invalid number");
+    if (initUnit === 'invalid unit' && initNum === 'invalid number') {
+      res.type('txt').send('invalid number and unit')
+    } else if (initUnit === 'invalid unit') {
+      res.type('txt').send('invalid unit')
+    } else if (initNum === 'invalid number') {
+      res.type('txt').send('invalid number')
     }
-    else if(initNum != "invalid number" && initUnit=="invalid unit"){
-       res.send("invalid unit");
-    }
-    else if(initNum == "invalid number" && initUnit=="invalid unit"){
-       res.send("invalid number and unit");
-    }
-    else{
-      let returnNum = convertHandler.convert(initNum,initUnit);
-      console.log(returnNum);
-      let returnUnit = convertHandler.getReturnUnit(initUnit);
-      console.log(returnUnit);
-      let stringOp=convertHandler.getString(initNum,initUnit,returnNum,returnUnit)
-      res.json(stringOp);
-    }
-    
-    
-  });
-  
-  
+
+    res.json({
+      initNum: initNum,
+      initUnit: initUnit,
+      returnNum: returnNum,
+      returnUnit: returnUnit,
+      string: `${initNum} ${convertHandler.spellOutUnit(initUnit)}` +
+        ' converts to ' +
+        `${returnNum} ${convertHandler.spellOutUnit(returnUnit)}`
+    })
+  })
+
 };
